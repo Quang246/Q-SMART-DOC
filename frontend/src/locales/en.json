@@ -1,0 +1,21 @@
+{
+    "app": {
+      "title": "Q-SMART DOC | The system converts video content to text",
+      "logout": "Sign out",
+      "hello": "Hi, ",
+      "signin": {
+        "title": "Sign In",
+        "placeholder": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "button": "Login",
+        "remember": "Remember password",
+        "forgotpassword": "Forgot password",
+        "noAccount": "Don't have an account?",
+        "linkSignUp": "Sign up",
+        "linkForgot": "Forgot password",
+        "captchaMessage": "Captcha"
+      }
+    }
+}

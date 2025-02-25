@@ -1,0 +1,22 @@
+{
+    "app": {
+      "title": "Q-SMART DOC | Hệ thống chuyển nội dung video thành văn bản",
+      "hello": "Xin chào, ",
+      "logout": "Đăng xuất",
+
+      "signin": {
+        "title": "Đăng nhập",
+        "placeholder": {
+          "username": "Tên đăng nhập",
+          "password": "Mật khẩu"
+        },
+        "button": "Đăng nhập",
+        "remember": "Nhớ mật khẩu",
+        "forgotpassword": "Quên mật khẩu",
+        "noAccount": "Bạn chưa có tài khoản?",
+        "linkSignUp": "Đăng ký",
+        "linkForgot": "Quên mật khẩu",
+        "captchaMessage": "Captcha"
+      }
+    }
+}

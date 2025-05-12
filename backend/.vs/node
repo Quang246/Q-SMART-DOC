@@ -1,0 +1,5 @@
+; 1️⃣ Client gửi request 👉 UserController nhận
+; 2️⃣ UserController 👉 gọi CreateUserUseCase
+; 3️⃣ CreateUserUseCase 👉 gọi UserRepository.create(user)
+; 4️⃣ UserRepositoryImpl 👉 lưu vào database
+; 5️⃣ Trả dữ liệu về client

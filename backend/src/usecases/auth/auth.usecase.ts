@@ -47,17 +47,17 @@ export class AuthUseCase {
     password: string,
   ): Promise<{ userid: number; username: string; access_token: string }> {
     const user = await this.userRepo.getUserByUsername(username);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
-    }
 
     const payload = { username: user.username, userid: user.userId };
+
     const token = await this.jwtService.sign(payload);
+    console.log('JWT signing with secret:', process.env.JWT_SECRET);
+    console.log('Token:', token);
     return {
       userid: user.userId,
       username: user.username,

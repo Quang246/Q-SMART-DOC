@@ -1,21 +1,30 @@
+/* eslint-disable @typescript-eslint/require-await */
+// src/infrastructure/jwt/jwt.module.ts
 import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+import { JwtStrategy } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtServiceImpl } from './jwt.service';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_secret',
-      signOptions: { expiresIn: '1h' },
+    ConfigModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: `${configService.get<string>('JWT_EXPIRATION_TIME')}s`,
+        },
+      }),
     }),
   ],
-  providers: [
-    {
-      provide: 'IJwtService',
-      useClass: JwtServiceImpl,
-    },
-    JwtServiceImpl,
-  ],
-  exports: ['IJwtService', JwtModule],
+  providers: [JwtStrategy, JwtAuthGuard, JwtServiceImpl],
+  exports: [JwtAuthGuard, JwtServiceImpl, JwtModule],
 })
 export class JwtServiceModule {}

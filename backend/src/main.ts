@@ -10,12 +10,21 @@ const flagPath = path.join(__dirname, 'swagger-opened.flag');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  app.setGlobalPrefix('q-smart-doc/api');
   const config = new DocumentBuilder()
     .setTitle('Q-SMART-DOC API')
     .setDescription('API documentation for Q-SMART-DOC')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -49,7 +49,6 @@
 <script>
 import ArgonInput from "../UI/ArgonInput.vue";
 import ArgonButton from "../UI/ArgonButton.vue";
-
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: "Register",

@@ -8,6 +8,7 @@ const i18n = createI18n({
   locale: "vi",
   messages,
 });
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 

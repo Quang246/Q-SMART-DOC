@@ -37,7 +37,7 @@ export class AuthUseCase {
       userId: user.userId,
       username: user.username,
       email: user.email,
-      role: user.role,
+      role: user.roleId,
       message: 'Đăng ký thành công',
     };
   }
@@ -47,16 +47,14 @@ export class AuthUseCase {
     password: string,
   ): Promise<{ userid: number; username: string; access_token: string }> {
     const user = await this.userRepo.getUserByUsername(username);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
-    }
 
     const payload = { username: user.username, userid: user.userId };
+
     const token = await this.jwtService.sign(payload);
     return {
       userid: user.userId,

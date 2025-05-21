@@ -1,4 +1,11 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UnauthorizedException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthUseCase } from './auth.usecase';
 import { RegisterDto } from './dto/register.dto';
@@ -18,13 +25,30 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const result = await this.authUseCase.login(
-      loginDto.username,
-      loginDto.password,
-    );
-    if (!result) {
-      throw new UnauthorizedException('Invalid credentials');
+    try {
+      const result = await this.authUseCase.login(
+        loginDto.username,
+        loginDto.password,
+      );
+
+      return {
+        statusCode: 200,
+        message: 'Đăng nhập thành công',
+        data: result,
+      };
+    } catch (error) {
+      // Nếu đã là HttpException thì ném lại
+      if (error instanceof UnauthorizedException) {
+        throw new UnauthorizedException('Thông tin đăng nhập chưa chính xác');
+      }
+
+      // Nếu lỗi từ Validation hoặc do dữ liệu
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException('Dữ liệu đầu vào không hợp lệ');
+      }
+
+      // Còn lại: lỗi không xác định
+      throw new InternalServerErrorException('Lỗi hệ thống khi đăng nhập');
     }
-    return result;
   }
 }

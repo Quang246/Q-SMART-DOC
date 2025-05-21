@@ -1,55 +1,57 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateDocumentDto {
-  @ApiProperty()
-  docname: string;
+  @ApiProperty({ description: 'Title of the document' })
+  title: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: 'Author of the document', required: false })
   author?: string;
 
-  @ApiProperty({ required: false })
-  category?: string;
+  @ApiProperty({ description: 'Category ID', required: false })
+  categoryId?: number;
 
+  @ApiProperty({ description: 'File path of the document' })
+  filePath: string;
+
+  @ApiProperty({ description: 'ID of user who created', required: false })
+  createdBy?: number;
   @ApiProperty()
-  file_path: string;
-
-  @ApiProperty({ required: false })
-  created_by?: number;
+  createdAt: Date;
 }
 
 export class UpdateDocumentDto {
-  @ApiProperty({ required: false })
-  docname?: string;
+  @ApiProperty({ description: 'Title of the document', required: false })
+  title?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: 'Author of the document', required: false })
   author?: string;
 
-  @ApiProperty({ required: false })
-  category?: string;
+  @ApiProperty({ description: 'Category ID', required: false })
+  categoryId?: number;
 
-  @ApiProperty({ required: false })
-  file_path?: string;
+  @ApiProperty({ description: 'File path of the document', required: false })
+  filePath?: string;
 }
 
 export class DocumentResponseDto {
-  @ApiProperty()
-  docid: number;
+  @ApiProperty({ description: 'Document ID' })
+  documentId: number;
 
-  @ApiProperty()
-  docname: string;
+  @ApiProperty({ description: 'Title of the document' })
+  title: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: 'Author of the document', required: false })
   author?: string;
 
-  @ApiProperty({ required: false })
-  category?: string;
+  @ApiProperty({ description: 'Category name', required: false })
+  categoryName?: string;
 
-  @ApiProperty()
-  file_path: string;
+  @ApiProperty({ description: 'File path of the document' })
+  filePath: string;
 
-  @ApiProperty({ required: false })
-  created_by?: number;
+  @ApiProperty({ description: 'ID of the user who created', required: false })
+  createdBy?: number;
 
-  @ApiProperty()
-  created_at: Date;
+  @ApiProperty({ description: 'Creation date' })
+  createdAt: Date;
 }

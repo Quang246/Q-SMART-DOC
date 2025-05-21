@@ -37,7 +37,7 @@ export class AuthUseCase {
       userId: user.userId,
       username: user.username,
       email: user.email,
-      role: user.role,
+      role: user.roleId,
       message: 'Đăng ký thành công',
     };
   }
@@ -56,8 +56,6 @@ export class AuthUseCase {
     const payload = { username: user.username, userid: user.userId };
 
     const token = await this.jwtService.sign(payload);
-    console.log('JWT signing with secret:', process.env.JWT_SECRET);
-    console.log('Token:', token);
     return {
       userid: user.userId,
       username: user.username,

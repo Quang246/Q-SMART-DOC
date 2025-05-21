@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from '../../infrastructure/repositories/document.entity';
 import { CreateDocumentDto, UpdateDocumentDto } from './dto/crud-document.dto';
-import { DocumentModel } from '../../domain/model/document';
+// import { DocumentModel } from '../../domain/model/document';
 
 @Injectable()
 export class DocumentUseCase {
@@ -12,28 +12,33 @@ export class DocumentUseCase {
     private readonly documentRepo: Repository<Document>,
   ) {}
 
-  async create(dto: CreateDocumentDto): Promise<DocumentModel> {
+  async create(dto: CreateDocumentDto): Promise<Document> {
     const doc = this.documentRepo.create(dto);
-    const saved = await this.documentRepo.save(doc);
-    return saved;
+    return await this.documentRepo.save(doc);
   }
 
-  async findAll(): Promise<DocumentModel[]> {
+  async findAll(): Promise<Document[]> {
     return this.documentRepo.find();
   }
 
-  async findOne(id: number): Promise<DocumentModel> {
-    const doc = await this.documentRepo.findOne({ where: { docid: id } });
+  async findOne(id: number): Promise<Document> {
+    const doc = await this.documentRepo.findOne({ where: { documentId: id } });
     if (!doc) throw new NotFoundException('Document not found');
     return doc;
   }
 
-  async update(id: number, dto: UpdateDocumentDto): Promise<DocumentModel> {
-    await this.documentRepo.update(id, dto);
+  async update(id: number, dto: UpdateDocumentDto): Promise<Document> {
+    const updateResult = await this.documentRepo.update(id, dto);
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Document not found');
+    }
     return this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
-    await this.documentRepo.delete(id);
+    const deleteResult = await this.documentRepo.delete(id);
+    if (deleteResult.affected === 0) {
+      throw new NotFoundException('Document not found');
+    }
   }
 }

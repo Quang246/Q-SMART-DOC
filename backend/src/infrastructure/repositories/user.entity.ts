@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-
+import { RoleEntity } from './role.entity';
 @Entity('user')
 export class UserEntity {
   @PrimaryGeneratedColumn({ name: 'userid' })
@@ -19,7 +21,9 @@ export class UserEntity {
 
   @Column({ name: 'password', type: 'text' })
   password: string;
-
+  @ManyToOne(() => RoleEntity, { eager: true }) // eager giúp tự động join role
+  @JoinColumn({ name: 'role_id' }) // mapping đúng foreign key
+  role: RoleEntity;
   @CreateDateColumn({
     name: 'createdate',
     type: 'datetime',
@@ -36,8 +40,6 @@ export class UserEntity {
     onUpdate: 'CURRENT_TIMESTAMP(6)',
   })
   updateddate: Date;
-  @Column({ default: 'user' }) // hoặc bạn có thể để giá trị mặc định là 'user'
-  role: string;
   @Column({
     name: 'hash_refresh_token',
     type: 'varchar',

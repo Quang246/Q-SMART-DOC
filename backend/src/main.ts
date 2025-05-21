@@ -11,6 +11,11 @@ const flagPath = path.join(__dirname, 'swagger-opened.flag');
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('q-smart-doc/api');
+  app.enableCors({
+    origin: 'http://localhost:8080',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  });
   const config = new DocumentBuilder()
     .setTitle('Q-SMART-DOC API')
     .setDescription('API documentation for Q-SMART-DOC')

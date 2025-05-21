@@ -7,11 +7,10 @@
         </div>
         <div class="col-md-10">
           <Header />
+          <router-view />
         </div>
       </div>
     </div>
-
-    <router-view />
     <!-- View chính sẽ thay đổi theo route -->
 
     <div v-if="!isLoginPage" class="col-md-12">

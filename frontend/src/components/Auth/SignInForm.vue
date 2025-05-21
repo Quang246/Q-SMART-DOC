@@ -9,7 +9,7 @@
       <argon-input
         id="password"
         :type="showPassword ? 'text' : 'password'"
-        :placeholder="$t('app.signin.placeholder.password')"
+        placeholder="Mật khẩu"
         v-model="passWord"
         :isRequired="true"
       />
@@ -37,33 +37,37 @@
       <a href="/forgot" class="forgot">Quên mật khẩu</a>
     </div>
 
-    <argon-button class="login-button" @click="handleSubmit"
-      >Đăng nhập</argon-button
-    >
+    <argon-button class="login-button" @click="Login">Đăng nhập</argon-button>
 
     <p class="register-text">
       Bạn chưa có tài khoản? <a href="/register">Đăng ký</a>
     </p>
   </div>
+  <Toast
+      v-if="showToast"
+      :action="toastAction"
+      :message="toastMessage"
+      @hide="showToast = false"
+    />
 </template>
 
 <script>
 import ArgonInput from "../UI/ArgonInput.vue";
 import ArgonButton from "../UI/ArgonButton.vue";
-// import VueHcaptcha from "@hcaptcha/vue3-hcaptcha"
-import AuthValidations from "@/Auth/AuthValidations";
-
+import axiosInstance from '@/config';
+import Toast from '../UI/Toast.vue';
+// import EventBus from '@/services/EventBus';
 export default {
   name: "SignInForm",
   components: {
     ArgonInput,
     ArgonButton,
-    // VueHcaptcha,
+    Toast
   },
   props: {
     onSubmit: {
       type: Function,
-      required: true,
+      required: false,
     },
     showCaptcha: {
       type: Boolean,
@@ -76,57 +80,57 @@ export default {
       passWord: "",
       rememberMe: false,
       showPassword: false,
-      errors: {},
-      captchaToken: "",
-      localShowCaptcha: false,
+      showToast: false,
+      toastAction: '',
+      toastMessage: '',
     };
   },
-  created() {
-    localStorage.removeItem("userid");
-    localStorage.removeItem("accessToken");
-
-    if (localStorage.getItem("rememberMe") === "true") {
-      this.userName = localStorage.getItem("userName") || "";
-      this.passWord = localStorage.getItem("passWord") || "";
-      this.rememberMe = true;
-    }
-  },
   watch: {
-    showCaptcha(newVal) {
-      this.localShowCaptcha = newVal;
-    },
+  },
+  created() {
+    const isRemembered = localStorage.getItem("rememberMe") === "true";
+  if (isRemembered) {
+    this.userName = localStorage.getItem("userName") || "";
+    this.passWord = localStorage.getItem("passWord") || "";
+    this.rememberMe = true;
+  } else {
+    localStorage.removeItem("userid");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("accessToken");
+  }
   },
   methods: {
     togglePassword() {
       this.showPassword = !this.showPassword;
     },
-    onCaptchaSuccess(token) {
-      this.captchaToken = token;
-    },
-    async handleSubmit() {
-      this.errors = {};
 
-      const validations = new AuthValidations(this.userName, this.passWord);
-      const validationErrors = validations.checkValidations();
-
-      if (this.localShowCaptcha && !this.captchaToken) {
-        validationErrors.captcha = "Vui lòng xác minh CAPTCHA";
-      }
-
-      this.errors = validationErrors;
-      if (Object.keys(this.errors).length > 0) return;
-
+    async Login() {
       try {
-        await this.onSubmit(
-          this.userName,
-          this.passWord,
-          this.rememberMe,
-          this.captchaToken
-        );
+        const response = await axiosInstance.post("/auth/login", {
+          username: this.userName,
+          password: this.passWord,
+        });
+
+        if (response.data) {
+          const { access_token, userid, username } = response.data.data;
+          localStorage.setItem("accessToken", access_token);
+          localStorage.setItem("userid", userid);
+          localStorage.setItem("userName", username);
+          localStorage.setItem("rememberMe", this.rememberMe ? "true" : "false");
+          this.showToast = true;
+          this.toastAction = "success";
+          this.toastMessage = response.data.message;
+        }
+        setTimeout(() => {
+  this.$router.push({ path: '/home' });
+}, 1000);
       } catch (error) {
-        console.error("Đăng nhập thất bại:", error);
+        this.showToast = true;
+        this.toastAction = "error";
+        this.toastMessage = error.response?.data?.message; 
       }
-    },
+      
+    }
   },
 };
 </script>
@@ -143,13 +147,6 @@ export default {
   width: 350px;
   margin-bottom: 20px;
 }
-.form-input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
 .password-field {
   position: relative;
 }
@@ -160,14 +157,6 @@ export default {
   transform: translateY(-50%);
   width: 16px;
   height: 16px;
-  cursor: pointer;
-}
-
-.toggle-password {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
   cursor: pointer;
 }
 .options {

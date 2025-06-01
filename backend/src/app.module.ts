@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -8,6 +9,7 @@ import { UserEntity } from './infrastructure/repositories/user.entity';
 import { JwtServiceModule } from './infrastructure/jwt/jwt.module';
 import { AuthController } from './usecases/auth/auth.controller';
 import { DocumentModule } from './usecases/document/document.module';
+import { CategoryModule } from './usecases/category/category.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,15 +24,19 @@ import { DocumentModule } from './usecases/document/document.module';
         username: config.get<string>('DATABASE_USER', 'root'),
         password: config.get<string>('DATABASE_PASSWORD', '123456'),
         database: config.get<string>('DATABASE_NAME', 'QSDOC'),
-        synchronize:
-          config.get<string>('DATABASE_SYNCHRONIZE', 'false') === 'true',
+        synchronize: config.get<string>('DATABASE_SYNCHRONIZE', 'false') === 'true',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
       }),
       inject: [ConfigService],
     }),
+
+    // Đăng ký entity cho DI
     TypeOrmModule.forFeature([UserEntity]),
+
+    // Các module khác
     JwtServiceModule,
     DocumentModule,
+    CategoryModule,
   ],
   controllers: [AuthController],
   providers: [

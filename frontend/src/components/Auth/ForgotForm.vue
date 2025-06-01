@@ -48,10 +48,13 @@ export default {
 <style scoped>
 .form-container {
   width: 350px;
-  margin: 50px auto;
+  margin: 0px auto;
+  padding: 50px 0;
   text-align: center;
   font-family: sans-serif;
   caret-color: transparent;
+  height: 100vh;
+  overflow: hidden !important;
 }
 .logo {
   width: 350px;

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import {
   JwtService as NestJwtService,
@@ -12,7 +9,6 @@ import { IJwtService } from '../../domain/adapters/jwt.interface';
 @Injectable()
 export class JwtServiceImpl implements IJwtService {
   constructor(private readonly jwtService: NestJwtService) {}
-
   async sign(
     payload: Record<string, unknown>,
     options?: JwtSignOptions,

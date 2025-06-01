@@ -4,33 +4,56 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Category } from './category.entity';
 import { UserEntity } from './user.entity';
 
-@Entity('documents')
+@Entity('document')
 export class Document {
-  @PrimaryGeneratedColumn()
-  docid: number;
+  @PrimaryGeneratedColumn({ name: 'document_id' }) // 👈 sửa ở đây
+  documentId: number;
 
-  @Column()
-  docname: string;
+  @Column({ name: 'title' })
+  title: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'author', nullable: true })
   author: string;
 
-  @Column({ nullable: true })
-  category: string;
+  @Column({ name: 'category_id' })
+  categoryId: number;
+  @ManyToOne(() => Category, (category) => category.documents, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 
-  @Column()
-  file_path: string;
+  @Column({ name: 'file_path', nullable: true })
+  filePath: string;
 
-  @Column({ nullable: true })
-  created_by: number;
+  // @Column({ name: 'created_by', nullable: true })
+  // createdBy: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
+  // @ManyToOne(() => UserEntity)
+  // @JoinColumn({ name: 'created_by' })
+  // createdByUser: UserEntity;
+  // @ManyToOne(() => UserEntity, (user) => user.username)
+  // @JoinColumn({ name: 'createdBy' }) // Khoá ngoại trỏ đến userId
+  // createdByUser: UserEntity;
 
-  @ManyToOne(() => UserEntity, { nullable: true })
+  @ManyToOne(() => UserEntity, { nullable: true, eager: true })
   @JoinColumn({ name: 'created_by' })
   createdByUser: UserEntity;
+  @Column({ name: 'created_by', nullable: true })
+  createdBy: number;
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  createdAt: Date;
+  @ManyToOne(() => UserEntity, { nullable: true, eager: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedByUser: UserEntity;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedBy: number;
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  updatedAt: Date;
 }

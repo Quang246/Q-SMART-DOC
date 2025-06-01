@@ -138,10 +138,13 @@ export default {
 <style scoped>
 .login-container {
   width: 350px;
-  margin: 50px auto;
+  margin: 0px auto;
+  padding: 50px 0;
   text-align: center;
   font-family: sans-serif;
   caret-color: transparent;
+  height: 100vh;
+  overflow: hidden;
 }
 .logo {
   width: 350px;
@@ -167,7 +170,7 @@ export default {
   margin: 10px 0;
 }
 .forgot {
-  color: #00bcd4;
+  color: #0b20e1;
   text-decoration: none;
 }
 .login-button {
@@ -185,7 +188,7 @@ export default {
   font-size: 14px;
 }
 .register-text a {
-  color: #00bcd4;
+  color: #0b20e1;
   text-decoration: none;
 }
 h3 {

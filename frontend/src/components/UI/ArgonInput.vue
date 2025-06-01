@@ -162,9 +162,12 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
 .input-group-text{
   height: 36px !important;
   border: 0.8px solid rgb(210, 214, 218) !important;
+}
+::v-deep input.form-control {
+  caret-color: auto !important;
 }
 </style>

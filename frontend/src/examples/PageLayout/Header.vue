@@ -46,7 +46,7 @@ import { ref } from 'vue';
 
 const screenTitle = ref("Tên Màn Hình");
 const currentLang = ref("vi");
-const userName = ref("User Name");
+const userName = localStorage.getItem("userName");
 
 function switchLanguage(lang) {
   currentLang.value = lang;

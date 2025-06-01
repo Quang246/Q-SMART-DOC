@@ -19,6 +19,11 @@
         <Footer />
       </div> -->
     </div>
+    <!-- View chính sẽ thay đổi theo route -->
+
+    <!-- <div v-if="!isLoginPage" class="col-md-12">
+      <Footer />
+    </div>-->
   </div>
 </template>
 

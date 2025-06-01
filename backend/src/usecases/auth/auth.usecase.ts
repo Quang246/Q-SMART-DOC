@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -7,12 +6,14 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  NotFoundException,
+  HttpStatus,
 } from '@nestjs/common';
 import { IUserRepository } from 'src/domain/repositories/userRepository.interface';
 import { IJwtService } from 'src/domain/adapters/jwt.interface';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AuthUseCase {
@@ -60,6 +61,39 @@ export class AuthUseCase {
       userid: user.userId,
       username: user.username,
       access_token: token,
+    };
+  }
+  async getAllUsers() {
+    const users = await this.userRepo.getAllUsers();
+    return users;
+  }
+
+  async updateUser(userId: number, dto: UpdateUserDto) {
+    const user = await this.userRepo.getUserById(userId);
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    const updatedUser = await this.userRepo.updateUser(userId, {
+      username: dto.username,
+      email: dto.email,
+      roleId: dto.roleId,
+      updatedDate: new Date(),
+    });
+
+    return {
+      user: updatedUser,
+    };
+  }
+  async deleteUsers(ids: number[]) {
+    const users = await this.userRepo.getUsersByIds(ids);
+    if (users.length === 0) {
+      throw new NotFoundException('Không tìm thấy user nào để xóa');
+    }
+    await this.userRepo.deleteUsersByIds(ids);
+    return {
+      statusCode: HttpStatus.OK,
+      message: `Đã xóa ${users.length} user`,
     };
   }
 }

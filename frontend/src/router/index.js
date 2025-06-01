@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import SignInForm from '@/components/Auth/SignInForm.vue';
 import SignUpForm from '@/components/Auth/SignUpForm.vue';
 import ForgotForm from '@/components/Auth/ForgotForm.vue';
+import Upload from '@/components/QLVB/Upload.vue'; 
+import ListUser from '@/components/QLTK/ListUser.vue';
 import Upload from '@/components/QLVB/Upload.vue';
 const routes = [
   {
@@ -24,6 +26,15 @@ const routes = [
     component: ForgotForm, // Trang đăng ký
   },
   {
+    path: '/Upload',
+    name: 'Upload',
+    component: Upload,
+  },
+  {
+    path: '/ListUser',
+    name: 'ListUser',
+    component: ListUser,
+  },
     path: '/upload',
     name: 'Upload',
     component: Upload,

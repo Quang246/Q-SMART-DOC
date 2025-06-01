@@ -4,7 +4,6 @@ import SignUpForm from '@/components/Auth/SignUpForm.vue';
 import ForgotForm from '@/components/Auth/ForgotForm.vue';
 import Upload from '@/components/QLVB/Upload.vue'; 
 import ListUser from '@/components/QLTK/ListUser.vue';
-import Upload from '@/components/QLVB/Upload.vue';
 const routes = [
   {
     path: '/',
@@ -34,10 +33,6 @@ const routes = [
     path: '/ListUser',
     name: 'ListUser',
     component: ListUser,
-  },
-    path: '/upload',
-    name: 'Upload',
-    component: Upload,
   },
   // Thêm các route khác ở đây nếu cần
 ];

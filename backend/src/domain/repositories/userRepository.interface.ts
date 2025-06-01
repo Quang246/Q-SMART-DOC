@@ -8,4 +8,9 @@ export interface IUserRepository {
     userId: number,
     refreshToken: string | null,
   ): Promise<void>;
+  getAllUsers(): Promise<UserM[]>;
+  getUserById(userId: number): Promise<UserM | null>;
+  updateUser(userId: number, data: Partial<UserM>): Promise<UserM>;
+  getUsersByIds(ids: number[]): Promise<UserM[]>;
+  deleteUsersByIds(ids: number[]): Promise<void>;
 }

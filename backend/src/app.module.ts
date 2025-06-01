@@ -9,7 +9,7 @@ import { UserEntity } from './infrastructure/repositories/user.entity';
 import { JwtServiceModule } from './infrastructure/jwt/jwt.module';
 import { AuthController } from './usecases/auth/auth.controller';
 import { DocumentModule } from './usecases/document/document.module';
-
+import { CategoryModule } from './usecases/category/category.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -36,6 +36,7 @@ import { DocumentModule } from './usecases/document/document.module';
     // Các module khác
     JwtServiceModule,
     DocumentModule,
+    CategoryModule,
   ],
   controllers: [AuthController],
   providers: [

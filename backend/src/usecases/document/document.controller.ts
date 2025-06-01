@@ -8,11 +8,13 @@ import {
   Get,
   Body,
   Param,
+  Query,
   Delete,
+  Request,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DocumentUseCase } from './document.usecase';
 import { JwtAuthGuard } from '../../infrastructure/jwt/jwt-auth.guard';
 
@@ -31,8 +33,10 @@ export class DocumentController {
 
   @Post('createdoc')
   @ApiResponse({ status: 201, type: DocumentResponseDto })
-  async create(@Body() dto: CreateDocumentDto) {
+  async create(@Body() dto: CreateDocumentDto, @Request() req) {
     try {
+      dto.createdBy = req.user.userId;
+      // dto.createdAt = new Date();
       const createdDoc = await this.useCase.create(dto);
       return {
         message: 'Tạo tài liệu thành công.',
@@ -51,13 +55,38 @@ export class DocumentController {
   }
 
   @Get('getAllDoc')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
   @ApiResponse({ status: 200, type: [DocumentResponseDto] })
-  async findAll() {
+  async findAll(
+    @Query('page') page: number = 1,
+    @Query('pageSize') pageSize: number = 10,
+  ) {
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
     try {
-      const docs = await this.useCase.findAll();
+      const { data, totalCount } = await this.useCase.findAll(skip, take);
+
+      // map để chỉ trả những trường cần thiết
+      const mapped = data.map((doc) => ({
+        documentId: doc.documentId,
+        title: doc.title,
+        author: doc.author,
+        categoryId: doc.categoryId,
+        filePath: doc.filePath,
+        createdAt: doc.createdAt,
+        createdBy: doc.createdBy,
+        createdByUser: doc.createdByUser?.username || '',
+      }));
       return {
         message: 'Lấy danh sách tài liệu thành công.',
-        data: docs,
+        data: mapped,
+        pagination: {
+          currentPage: page,
+          pageSize,
+          totalCount,
+          totalPages: Math.ceil(totalCount / pageSize), // (tuỳ chọn)
+        },
       };
     } catch (error) {
       throw new HttpException(
@@ -70,35 +99,91 @@ export class DocumentController {
       );
     }
   }
+  @Get('getDocby')
+  @ApiQuery({ name: 'categoryId', required: true, type: Number })
+  @ApiQuery({ name: 'title', required: false, type: String })
+  @ApiQuery({ name: 'author', required: false, type: String })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  async findByQuery(
+    @Query('categoryId') categoryId: number,
+    @Query('title') title?: string,
+    @Query('author') author?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('page') page: number = 1,
+    @Query('pageSize') pageSize: number = 10,
+  ) {
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
-  @Get('getDocby/:id')
-  @ApiResponse({ status: 200, type: DocumentResponseDto })
-  async findOne(@Param('id') id: number) {
-    try {
-      const doc = await this.useCase.findOne(+id);
-      return {
-        message: `Lấy tài liệu với id ${id} thành công.`,
-        data: doc,
-      };
-    } catch (error) {
-      throw new HttpException(
-        {
-          statusCode: error.status || HttpStatus.NOT_FOUND,
-          message: error.message || `Không tìm thấy tài liệu với id: ${id}.`,
-          error: 'Không tìm thấy',
-        },
-        error.status || HttpStatus.NOT_FOUND,
-      );
-    }
+    const { data, totalCount } = await this.useCase.findDocByCat(
+      +categoryId,
+      title,
+      author,
+      fromDate ? new Date(fromDate) : undefined,
+      toDate ? new Date(toDate) : undefined,
+      skip,
+      take,
+    );
+    const mapped = data.map((doc) => ({
+      documentId: doc.documentId,
+      title: doc.title,
+      author: doc.author,
+      categoryId: doc.categoryId,
+      filePath: doc.filePath,
+      createdAt: doc.createdAt,
+      createdBy: doc.createdBy,
+      createdByUser: doc.createdByUser?.username || '',
+      updatedBy: doc.updatedBy,
+      updatedAt: doc.updatedAt,
+      updatedByUser: doc.updatedByUser?.username || '',
+    }));
+    return {
+      message: 'Lấy danh sách tài liệu thành công.',
+      data: mapped,
+      pagination: {
+        currentPage: page,
+        pageSize: pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
   }
-
   @Post('updateDocby/:id')
-  async update(@Param('id') id: number, @Body() dto: UpdateDocumentDto) {
+  async update(
+    @Param('id') id: number,
+    @Body() dto: UpdateDocumentDto,
+    @Request() req,
+  ) {
     try {
-      const updatedDoc = await this.useCase.update(+id, dto);
+      // Gán thông tin user cập nhật và thời gian cập nhật
+      dto.updatedBy = req.user.userId;
+      // dto.updatedAt = new Date();
+
+      // Thực hiện cập nhật
+      const updatedDoc = await this.useCase.update(id, dto);
+
+      // Chuẩn bị dữ liệu trả về
+      const doc = {
+        documentId: updatedDoc.documentId,
+        title: updatedDoc.title,
+        author: updatedDoc.author,
+        categoryId: updatedDoc.categoryId,
+        filePath: updatedDoc.filePath,
+        createdAt: updatedDoc.createdAt,
+        createdBy: updatedDoc.createdBy,
+        createdByUser: updatedDoc.createdByUser?.username || '',
+        updatedAt: updatedDoc.updatedAt,
+        updatedBy: updatedDoc.updatedBy,
+        updatedByUser: updatedDoc.updatedByUser?.username || '',
+      };
+
       return {
-        message: `Cập nhật tài liệu với id ${id} thành công.`,
-        data: updatedDoc,
+        message: `Cập nhật tài liệu với id ${updatedDoc.documentId} thành công.`,
+        data: doc,
       };
     } catch (error) {
       throw new HttpException(

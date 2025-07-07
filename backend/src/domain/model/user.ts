@@ -18,4 +18,6 @@ export class UserWithoutPassword {
 
 export class UserM extends UserWithoutPassword {
   password: string;
+  tempPassword?: string;
+  tempPasswordExpires?: Date;
 }

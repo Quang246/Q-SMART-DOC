@@ -1,12 +1,12 @@
-// @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+/** @type {import('eslint').Linter.FlatConfig[]} */
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    ignores: ['eslint.config.mjs', 'copy-assets.js'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -23,6 +23,15 @@ export default tseslint.config(
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+  },
+  {
+    // override cho .mjs
+    files: ['**/*.mjs'],
+    languageOptions: {
+      parser: null, // Không dùng @typescript-eslint/parser cho .mjs
+      ecmaVersion: 'latest',
+      sourceType: 'module',
     },
   },
   {

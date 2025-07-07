@@ -9,9 +9,8 @@ export class Category {
   @Column({ name: 'category_name', type: 'varchar', length: 100, unique: true })
   categoryName: string;
 
-  @Column({ name: 'parent_id' })
-  parentId: number;
-
+  @Column({ name: 'parent_id', type: 'int', nullable: true })
+  parentId: number | null;
   // Một category có thể có nhiều documents
   @OneToMany(() => Document, (document) => document.categoryId)
   documents: Document[];

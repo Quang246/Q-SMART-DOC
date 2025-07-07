@@ -1,9 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+
 export class CreateCategory {
   @ApiProperty()
+  @IsString()
   categoryName: string;
-  @ApiProperty()
-  parentId: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  parentId?: number;
 }
 export class EditCategory {
   @ApiProperty()

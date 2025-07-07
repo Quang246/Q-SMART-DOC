@@ -2,14 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from 'src/infrastructure/repositories/category.entity';
+import { Document } from 'src/infrastructure/repositories/document.entity';
+import { DocumentStatistic } from 'src/infrastructure/repositories/document-statistic.entity';
 import { CreateCategory, EditCategory } from './dto/crud-category.dto';
-// import { DocumentModel } from '../../domain/model/document';
 
 @Injectable()
 export class CategoryUseCase {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
+    @InjectRepository(Document)
+    private readonly documentRepo: Repository<Document>,
+    @InjectRepository(DocumentStatistic)
+    private readonly documentStatisticRepo: Repository<DocumentStatistic>,
   ) {}
 
   async create(dto: CreateCategory): Promise<Category> {
@@ -36,9 +41,11 @@ export class CategoryUseCase {
   }
 
   async remove(categoryId: number): Promise<void> {
-    const deleteResult = await this.categoryRepo.delete(categoryId);
-    if (deleteResult.affected === 0) {
-      throw new NotFoundException('Category not found');
+    const documents = await this.documentRepo.find({ where: { categoryId } });
+    for (const doc of documents) {
+      await this.documentStatisticRepo.delete({ document_id: doc.documentId });
     }
+    await this.documentRepo.delete({ categoryId });
+    await this.categoryRepo.delete(categoryId);
   }
 }

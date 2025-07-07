@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -14,13 +15,14 @@ import { IJwtService } from 'src/domain/adapters/jwt.interface';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { MailService } from 'src/mail/mail.service';
 @Injectable()
 export class AuthUseCase {
   userRepository: any;
   constructor(
     @Inject('IUserRepository') private readonly userRepo: IUserRepository,
     @Inject('IJwtService') private readonly jwtService: IJwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -46,7 +48,12 @@ export class AuthUseCase {
   async login(
     username: string,
     password: string,
-  ): Promise<{ userid: number; username: string; access_token: string }> {
+  ): Promise<{
+    userid: number;
+    username: string;
+    access_token: string;
+    role: number;
+  }> {
     const user = await this.userRepo.getUserByUsername(username);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -61,6 +68,7 @@ export class AuthUseCase {
       userid: user.userId,
       username: user.username,
       access_token: token,
+      role: user.roleId,
     };
   }
   async getAllUsers() {
@@ -95,5 +103,49 @@ export class AuthUseCase {
       statusCode: HttpStatus.OK,
       message: `Đã xóa ${users.length} user`,
     };
+  }
+  private generateRandomPassword(length = 10): string {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userRepo.getUserByEmail(email);
+    if (!user) {
+      throw new NotFoundException('Email không tồn tại trong hệ thống.');
+    }
+
+    const newPassword = this.generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.userRepo.updateUserPassword(user.userId, hashedPassword);
+
+    await this.mailService.sendPasswordEmail(email, user.username, newPassword);
+  }
+  async changePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.userRepo.getUserByIdWithPassword(userId); // đúng hàm này
+    if (!user) {
+      throw new NotFoundException('Người dùng không tồn tại');
+    }
+
+    console.log('Current user password:', user.password); // debug check
+    console.log('Old password input:', oldPassword);
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isOldPasswordValid) {
+      throw new UnauthorizedException('Mật khẩu cũ không chính xác');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepo.updateUserPassword(userId, hashedNewPassword);
+
+    return { message: 'Đổi mật khẩu thành công.Vui lòng đăng nhập lại' };
   }
 }

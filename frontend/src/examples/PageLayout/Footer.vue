@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <footer class="footer">
-    <p>© 2025 Q-Smart Doc. All rights reserved.</p>
+    <!-- <p>© 2025 Q-Smart Doc. All rights reserved.</p> -->
   </footer>
 </template>
 
@@ -13,8 +13,12 @@
 .footer {
   color: #130e0e;
   text-align: center;
+  bottom: 0px;
   position: fixed;
-  bottom: 0;
-  width: 100%;
+  width: -webkit-fill-available;
+}
+p{
+  /* margin-top: 5px; */
+  margin-bottom: 0;
 }
 </style>

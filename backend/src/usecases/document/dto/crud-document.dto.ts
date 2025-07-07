@@ -20,9 +20,9 @@ export class CreateDocumentDto {
   @ApiProperty({
     description: 'File path of the document',
     example: 'uploads/file.docx',
+    required: false,
   })
-  @IsNotEmpty({ message: 'Vui lòng nhập đường dẫn file' })
-  filePath: string;
+  filePath?: string;
 
   @ApiProperty({ description: 'ID of user who created', required: false })
   createdBy?: number;

@@ -13,4 +13,7 @@ export interface IUserRepository {
   updateUser(userId: number, data: Partial<UserM>): Promise<UserM>;
   getUsersByIds(ids: number[]): Promise<UserM[]>;
   deleteUsersByIds(ids: number[]): Promise<void>;
+  getUserByEmail(email: string): Promise<UserM | null>;
+  updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
+  getUserByIdWithPassword(userId: number): Promise<UserM | null>;
 }

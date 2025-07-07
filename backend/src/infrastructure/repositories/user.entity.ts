@@ -19,7 +19,6 @@ export class UserEntity {
 
   @Column({ name: 'email', unique: true })
   email: string;
-  @Exclude()
   @Column({ name: 'password', type: 'text' })
   password: string;
   @Exclude()
@@ -52,4 +51,20 @@ export class UserEntity {
     length: 255,
   })
   hash_refresh_token: string | null;
+  @Column({
+    name: 'reset_password_token',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  resetPasswordToken: string | null;
+
+  @Column({
+    name: 'reset_password_expire',
+    type: 'datetime',
+    nullable: true,
+  })
+  resetPasswordExpire: Date | null;
+  tempPasswordExpires: Date;
+  tempPassword: any;
 }

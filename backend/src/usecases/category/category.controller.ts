@@ -85,13 +85,13 @@ export class CategoryController {
       await this.useCase.remove(+categoryId);
       return {
         statusCode: HttpStatus.OK,
-        message: `Xóa tài liệu thành công.`,
+        message: `Xóa chuyên mục thành công.`,
       };
     } catch (error) {
       throw new HttpException(
         {
           statusCode: error.status || HttpStatus.NOT_FOUND,
-          message: error.message || `Xóa tài liệu thất bại.`,
+          message: error.message || `Xóa chuyên mục thất bại.`,
           error: 'Không tìm thấy',
         },
         error.status || HttpStatus.NOT_FOUND,

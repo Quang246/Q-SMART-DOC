@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Body,
   Controller,
@@ -10,15 +13,24 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Delete,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthUseCase } from './auth.usecase';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DeleteUsersDto } from './dto/delete-user.dto';
-
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtAuthGuard } from 'src/infrastructure/jwt/jwt-auth.guard';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -88,5 +100,28 @@ export class AuthController {
       throw new BadRequestException('Thiếu hoặc sai định dạng ids');
     }
     return this.authUseCase.deleteUsers(ids);
+  }
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Gửi email khôi phục mật khẩu' })
+  @ApiResponse({ status: 200, description: 'Gửi thành công nếu email tồn tại' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authUseCase.forgotPassword(dto.email);
+
+    return {
+      message: 'Email khôi phục mật khẩu đã được gửi nếu email tồn tại.',
+    };
+  }
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() req: any,
+  ) {
+    console.log('changePasswordDto:', changePasswordDto); // Thêm log này
+    console.log('req.body:', req.body);
+    const { oldPassword, newPassword } = changePasswordDto;
+    const userId = req.user.userId;
+    return this.authUseCase.changePassword(userId, oldPassword, newPassword);
   }
 }

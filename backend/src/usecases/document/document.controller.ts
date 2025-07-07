@@ -13,92 +13,110 @@ import {
   Request,
   HttpException,
   HttpStatus,
+  Logger,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DocumentUseCase } from './document.usecase';
 import { JwtAuthGuard } from '../../infrastructure/jwt/jwt-auth.guard';
-
-import {
-  CreateDocumentDto,
-  UpdateDocumentDto,
-  DocumentResponseDto,
-} from './dto/crud-document.dto';
-
+import { CreateDocumentDto, UpdateDocumentDto } from './dto/crud-document.dto';
+import { ConfigService } from '@nestjs/config';
+import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
+// import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryInterceptor } from 'src/infrastructure/cloudinary/cloudinary.interceptor';
+const logger = new Logger('DocumentController');
 @ApiTags('Tài liệu')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentController {
-  constructor(private readonly useCase: DocumentUseCase) {}
+  constructor(
+    private readonly useCase: DocumentUseCase,
+    private readonly configService: ConfigService,
+  ) {}
+  // @Post('createdoc')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // async createDoc(@Body() body: any, @Request() req) {
+  //   if (!body.filePath) {
+  //     throw new HttpException(
+  //       'Thiếu đường dẫn file tài liệu (filePath)',
+  //       HttpStatus.BAD_REQUEST,
+  //     );
+  //   }
 
+  //   const dto = plainToInstance(CreateDocumentDto, {
+  //     ...body,
+  //     categoryId: Number(body.categoryId),
+  //     createdBy: req.user.userId,
+  //   });
+
+  //   await validateOrReject(dto);
+
+  //   const doc = await this.useCase.create(dto);
+
+  //   return {
+  //     message: 'Tạo tài liệu thành công.',
+  //     fileUrl: dto.filePath,
+  //     data: doc,
+  //   };
+  // }
   @Post('createdoc')
-  @ApiResponse({ status: 201, type: DocumentResponseDto })
-  async create(@Body() dto: CreateDocumentDto, @Request() req) {
-    try {
-      dto.createdBy = req.user.userId;
-      // dto.createdAt = new Date();
-      const createdDoc = await this.useCase.create(dto);
-      return {
-        message: 'Tạo tài liệu thành công.',
-        data: createdDoc,
-      };
-    } catch (error) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: error.message || 'Tạo tài liệu thất bại.',
-          error: 'Yêu cầu không hợp lệ',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
+  @UseInterceptors(CloudinaryInterceptor)
+  async uploadDocument(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: CreateDocumentDto,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
 
+    const createdDoc = await this.useCase.createWithFile(dto, file, userId); // 👈 truyền userId xuống
+
+    return {
+      data: createdDoc,
+      message: `Tạo tài liệu thành công`,
+    };
+  }
   @Get('getAllDoc')
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
-  @ApiResponse({ status: 200, type: [DocumentResponseDto] })
-  async findAll(
-    @Query('page') page: number = 1,
-    @Query('pageSize') pageSize: number = 10,
+  @ApiQuery({ name: 'title', required: false, type: String })
+  async getAllDoc(
+    @Query('page') page = 1,
+    @Query('pageSize') pageSize = 10,
+    @Query('title') title?: string,
   ) {
     const skip = (page - 1) * pageSize;
     const take = pageSize;
-    try {
-      const { data, totalCount } = await this.useCase.findAll(skip, take);
+    const { data, totalCount } = await this.useCase.findAll(skip, take, title);
 
-      // map để chỉ trả những trường cần thiết
-      const mapped = data.map((doc) => ({
-        documentId: doc.documentId,
-        title: doc.title,
-        author: doc.author,
-        categoryId: doc.categoryId,
-        filePath: doc.filePath,
-        createdAt: doc.createdAt,
-        createdBy: doc.createdBy,
-        createdByUser: doc.createdByUser?.username || '',
-      }));
-      return {
-        message: 'Lấy danh sách tài liệu thành công.',
-        data: mapped,
-        pagination: {
-          currentPage: page,
-          pageSize,
-          totalCount,
-          totalPages: Math.ceil(totalCount / pageSize), // (tuỳ chọn)
-        },
-      };
-    } catch (error) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error.message || 'Lấy danh sách tài liệu thất bại.',
-          error: 'Lỗi máy chủ nội bộ',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    const mapped = data.map((doc) => ({
+      documentId: doc.documentId,
+      title: doc.title,
+      author: doc.author,
+      categoryId: doc.categoryId,
+      filePath: doc.filePath,
+      createdAt: doc.createdAt,
+      createdBy: doc.createdBy,
+      createdByUser: doc.createdByUser?.username || '',
+      updatedBy: doc.updatedBy,
+      updatedAt: doc.updatedAt,
+      updatedByUser: doc.updatedByUser?.username || '',
+    }));
+
+    return {
+      message: 'Lấy danh sách tất cả tài liệu thành công.',
+      data: mapped,
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
   }
+
   @Get('getDocby')
   @ApiQuery({ name: 'categoryId', required: true, type: Number })
   @ApiQuery({ name: 'title', required: false, type: String })
@@ -113,8 +131,8 @@ export class DocumentController {
     @Query('author') author?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
-    @Query('page') page: number = 1,
-    @Query('pageSize') pageSize: number = 10,
+    @Query('page') page = 1,
+    @Query('pageSize') pageSize = 10,
   ) {
     const skip = (page - 1) * pageSize;
     const take = pageSize;
@@ -146,27 +164,49 @@ export class DocumentController {
       data: mapped,
       pagination: {
         currentPage: page,
-        pageSize: pageSize,
+        pageSize,
         totalCount,
         totalPages: Math.ceil(totalCount / pageSize),
       },
     };
   }
+
   @Post('updateDocby/:id')
+  @UseInterceptors(CloudinaryInterceptor)
   async update(
     @Param('id') id: number,
-    @Body() dto: UpdateDocumentDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
     @Request() req,
   ) {
     try {
-      // Gán thông tin user cập nhật và thời gian cập nhật
-      dto.updatedBy = req.user.userId;
-      // dto.updatedAt = new Date();
+      if (!body.title) {
+        throw new HttpException(
+          'Tên tài liệu không được để trống.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-      // Thực hiện cập nhật
-      const updatedDoc = await this.useCase.update(id, dto);
+      if (!body.author) {
+        throw new HttpException(
+          'Tác giả không được để trống.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-      // Chuẩn bị dữ liệu trả về
+      const dto = plainToInstance(UpdateDocumentDto, {
+        ...body,
+        updatedBy: req.user.userId,
+      });
+      await validateOrReject(dto);
+
+      const updatedDoc = await this.useCase.update(
+        +id,
+        dto,
+        file,
+        req.user.userId,
+      );
+
       const doc = {
         documentId: updatedDoc.documentId,
         title: updatedDoc.title,
@@ -186,17 +226,18 @@ export class DocumentController {
         data: doc,
       };
     } catch (error) {
+      logger.error(`Cập nhật thất bại cho tài liệu id ${id}`, error.stack);
+
       throw new HttpException(
         {
-          statusCode: error.status || HttpStatus.NOT_FOUND,
+          statusCode: error.status || HttpStatus.BAD_REQUEST,
           message: error.message || `Cập nhật tài liệu với id ${id} thất bại.`,
-          error: 'Không tìm thấy',
+          error: 'Lỗi dữ liệu hoặc không tìm thấy',
         },
-        error.status || HttpStatus.NOT_FOUND,
+        error.status || HttpStatus.BAD_REQUEST,
       );
     }
   }
-
   @Delete('deleteDocby/:id')
   async remove(@Param('id') id: number) {
     try {
@@ -205,6 +246,7 @@ export class DocumentController {
         message: `Xóa tài liệu với id ${id} thành công.`,
       };
     } catch (error) {
+      logger.error(`Xóa thất bại cho tài liệu id ${id}`, error.stack);
       throw new HttpException(
         {
           statusCode: error.status || HttpStatus.NOT_FOUND,
@@ -214,5 +256,9 @@ export class DocumentController {
         error.status || HttpStatus.NOT_FOUND,
       );
     }
+  }
+  @Get('stats/file-types')
+  async getFileTypeStats() {
+    return this.useCase.getFileTypeStats();
   }
 }

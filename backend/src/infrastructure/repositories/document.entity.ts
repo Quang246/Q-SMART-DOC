@@ -12,7 +12,7 @@ import { UserEntity } from './user.entity';
 
 @Entity('document')
 export class Document {
-  @PrimaryGeneratedColumn({ name: 'document_id' }) // 👈 sửa ở đây
+  @PrimaryGeneratedColumn({ name: 'document_id' })
   documentId: number;
 
   @Column({ name: 'title' })
@@ -25,23 +25,13 @@ export class Document {
   categoryId: number;
   @ManyToOne(() => Category, (category) => category.documents, {
     nullable: false,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
   @Column({ name: 'file_path', nullable: true })
   filePath: string;
-
-  // @Column({ name: 'created_by', nullable: true })
-  // createdBy: number;
-
-  // @ManyToOne(() => UserEntity)
-  // @JoinColumn({ name: 'created_by' })
-  // createdByUser: UserEntity;
-  // @ManyToOne(() => UserEntity, (user) => user.username)
-  // @JoinColumn({ name: 'createdBy' }) // Khoá ngoại trỏ đến userId
-  // createdByUser: UserEntity;
-
   @ManyToOne(() => UserEntity, { nullable: true, eager: true })
   @JoinColumn({ name: 'created_by' })
   createdByUser: UserEntity;

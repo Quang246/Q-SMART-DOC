@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -40,23 +40,63 @@ export class UserRepository implements IUserRepository {
     const user = await this.userRepo.findOne({ where: { userId } });
     return user ? (user as unknown as UserM) : null;
   }
+  async getUserByIdWithPassword(userId: number): Promise<UserM | null> {
+    const user = await this.userRepo.findOne({
+      where: { userId },
+      select: [
+        'userId',
+        'username',
+        'password',
+        'email',
+        'roleId',
+        'hash_refresh_token',
+      ],
+    });
+    return user ? (user as unknown as UserM) : null;
+  }
+
   async updateUser(userId: number, data: Partial<UserM>): Promise<UserM> {
     await this.userRepo.update(userId, data as any);
     const updatedUser = await this.userRepo.findOne({ where: { userId } });
     return updatedUser as unknown as UserM;
   }
   async getUsersByIds(ids: number[]): Promise<UserM[]> {
-    const userEntities = await this.userRepo.find({ where: { userId: In(ids) } });
+    const userEntities = await this.userRepo.find({
+      where: { userId: In(ids) },
+    });
     return plainToInstance(UserM, userEntities, {
       excludeExtraneousValues: true,
     });
   }
   async deleteUsers(users: UserM[]): Promise<void> {
-    const userIds = users.map(u => u.userId);
+    const userIds = users.map((u) => u.userId);
     await this.userRepo.delete({ userId: In(userIds) });
   }
 
   async deleteUsersByIds(ids: number[]): Promise<void> {
     await this.userRepo.delete({ userId: In(ids) });
+  }
+  async getUserByEmail(email: string): Promise<UserM | null> {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) return null;
+
+    return {
+      userId: user.userId,
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      roleId: user.roleId,
+      tempPassword: user.tempPassword,
+      tempPasswordExpires: user.tempPasswordExpires,
+      createDate: user.createdate,
+      updatedDate: user.updatedDate,
+      hashRefreshToken: user.hash_refresh_token,
+    };
+  }
+  async updateUserPassword(
+    userId: number,
+    hashedPassword: string,
+  ): Promise<void> {
+    await this.userRepo.update(userId, { password: hashedPassword });
   }
 }

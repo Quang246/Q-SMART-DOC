@@ -3,13 +3,19 @@
     <h3>Đăng ký</h3>
     <img src="@/assets/logo.png" alt="Logo" class="logo" />
 
-    <argon-input v-model="username" placeholder="Tên đăng nhập" class="mb-3" />
+    <argon-input
+      v-model="username"
+      placeholder="Tên đăng nhập"
+      class="mb-3"
+      :isRequired="true"
+    />
 
     <argon-input
       v-model="email"
       placeholder="Email"
       class="mb-3"
       type="email"
+      :isRequired="true"
     />
 
     <div class="password-field">
@@ -17,8 +23,7 @@
         id="password"
         :type="showPassword ? 'text' : 'password'"
         :placeholder="$t('app.signin.placeholder.password')"
-        v-model="passWord"
-        :isRequired="true"
+        v-model="password"
       />
       <img
         v-if="!showPassword"
@@ -36,7 +41,7 @@
       />
     </div>
 
-    <argon-button class="register-button" @click="register"
+    <argon-button class="register-button" @click="register()"
       >Đăng ký</argon-button
     >
 
@@ -44,17 +49,26 @@
       Đã có tài khoản? <router-link to="/login">Đăng nhập</router-link>
     </p>
   </div>
+  <Toast
+    v-if="showToast"
+    :action="toastAction"
+    :message="toastMessage"
+    @hide="showToast = false"
+  />
 </template>
 
 <script>
 import ArgonInput from "../UI/ArgonInput.vue";
 import ArgonButton from "../UI/ArgonButton.vue";
+import axiosInstance from "@/config";
+import Toast from "../UI/Toast.vue";
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: "Register",
   components: {
     ArgonInput,
     ArgonButton,
+    Toast,
   },
   data() {
     return {
@@ -62,28 +76,39 @@ export default {
       email: "",
       password: "",
       showPassword: false,
+      showToast: false,
+      toastAction: "",
+      toastMessage: "",
     };
   },
   methods: {
     togglePassword() {
       this.showPassword = !this.showPassword;
     },
-    register() {
-      // Kiểm tra dữ liệu đơn giản
-      if (!this.username || !this.email || !this.password) {
-        alert("Vui lòng điền đầy đủ thông tin!");
-        return;
+    async register() {
+      // if (!this.username || !this.email || !this.password) {
+      //   return;
+      // }
+      try {
+        const response = await axiosInstance.post("/auth/register", {
+          username: this.username,
+          email: this.email,
+          password: this.password,
+        });
+
+        if (response.data) {
+          this.showToast = true;
+          this.toastAction = "success";
+          this.toastMessage = response.data.message;
+        }
+        setTimeout(() => {
+          this.$router.push({ path: "/login" });
+        }, 1000);
+      } catch (error) {
+        this.showToast = true;
+        this.toastAction = "error";
+        this.toastMessage = error.response?.data?.message[0] || "Lỗi kết nối";
       }
-
-      // Gửi dữ liệu đăng ký
-      const payload = {
-        username: this.username,
-        email: this.email,
-        password: this.password,
-      };
-
-      console.log("Sending registration data:", payload);
-      // Gửi API đăng ký tại đây (axios, fetch, v.v.)
     },
   },
 };

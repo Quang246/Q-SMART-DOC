@@ -4,78 +4,39 @@
     <div class="navbar-logo">
       <img src="@/assets/logo.png" alt="Logo" />
     </div>
-<hr>
+    <hr />
     <div class="navbar-menu">
       <ul class="menu-list">
-        <li
-  v-for="item in menuData"
-  :key="item.id"
-  class="menu-item"
->
-  <div
-    class="menu-title"
-    :class="{ active: selectedMenuId === item.id && selectedSubmenuId === null }"
-    @click="selectMenu(item.id)"
-  >
-    {{ item.name }}
-  </div>
-
-  <ul
-    v-if="item.children && item.children.length && isExpanded(item.id)"
-    class="submenu"
-  >
-    <li
-      v-for="child in item.children"
-      :key="child.id"
-      class="submenu-item"
-      :class="{ active: selectedSubmenuId === child.id }"
-      @click="selectSubmenu(item.id, child.id)"
-    >
-      <router-link :to="child.route">{{ child.name }}</router-link>
-    </li>
-  </ul>
-</li>
-
-
+        <li v-for="item in menuData" :key="item.id" class="menu-item">
+          <router-link
+            class="menu-title"
+            :class="{ active: selectedMenuId === item.id }"
+            :to="item.route"
+            @click="selectMenu(item.id)"
+          >
+            {{ item.name }}
+          </router-link>
+        </li>
       </ul>
     </div>
   </nav>
 </template>
 
 <script>
+import axiosInstance from "@/config";
+
 export default {
   data() {
     return {
-      menuData: [
-        {
-          id: 1,
-          name: "Quản lý người dùng",
-          children: [
-            { id: 11, name: "Thêm người dùng", route: "/user/add" },
-            { id: 12, name: "Danh sách người dùng", route: "/user/list" },
-          ],
-        },
-        {
-          id: 2,
-          name: "Tài liệu",
-          children: [
-            { id: 21, name: "Tải lên", route: "/doc/upload" },
-            { id: 22, name: "Danh sách", route: "/doc/list" },
-          ],
-        },
-        {
-          id: 3,
-          name: "Hệ thống",
-          children: [
-            { id: 31, name: "Phân quyền", route: "/system/roles" },
-            { id: 32, name: "Cấu hình", route: "/system/settings" },
-          ],
-        },
-      ],
+      menuData: [],
       expandedIds: [],
       selectedMenuId: null,
       selectedSubmenuId: null,
+      currentRoleId: Number(localStorage.getItem("roleId")) || 1, // hoặc inject từ store
     };
+  },
+  mounted() {
+    this.fetchRoleActions();
   },
   methods: {
     toggleSubMenu(id) {
@@ -97,9 +58,27 @@ export default {
       this.selectedMenuId = parentId;
       this.selectedSubmenuId = childId;
     },
+    async fetchRoleActions() {
+      try {
+        const response = await axiosInstance.get("/action-with-role");
+        const data = response.data;
+        const currentRoleId = Number(localStorage.getItem("role"));
+        const filteredActions = data.filter((action) =>
+          action.roles.some(
+            (role) => role.roleId === currentRoleId && role.checked
+          )
+        );
+        this.menuData = filteredActions.map((action) => ({
+          id: action.actionId,
+          name: action.actionName,
+          route: `/${action.router}`,
+        }));
+      } catch (error) {
+        console.error("Error fetching actions:", error);
+      }
+    },
   },
 };
-
 </script>
 
 <style scoped>
@@ -113,17 +92,15 @@ export default {
 }
 
 .navbar-logo {
-  /* padding: 10px; */
   text-align: center;
 }
 
 .navbar-logo > img {
-  max-width: 100%;
+  max-width: 80%;
   height: auto;
 }
 
 .navbar-menu {
-  /* background: rgb(40, 18, 150); */
   padding: 0 10px;
   margin-top: 8px;
   height: 100%;
@@ -140,7 +117,9 @@ export default {
   margin-bottom: 1px;
 }
 
+/* Dùng router-link làm menu chính */
 .menu-title {
+  display: block;
   font-weight: bold;
   padding: 8px 10px;
   background-color: #fff;
@@ -148,12 +127,23 @@ export default {
   border-radius: 5px;
   cursor: pointer;
   user-select: none;
+  text-decoration: none;
+}
+
+/* Khi hover vào menu */
+.menu-title:hover {
+  background-color: #f6f1f1;
+}
+
+/* Khi menu hoặc submenu đang active */
+.menu-title.active,
+.submenu-item.active {
+  background-color: #f6f1f1;
 }
 
 .submenu {
   list-style: none;
   padding-left: 15px;
-  /* margin-top: 5px; */
 }
 
 .submenu-item {
@@ -165,23 +155,20 @@ export default {
   cursor: pointer;
 }
 
+/* Link trong submenu */
 .submenu-item a {
+  display: block;
   text-decoration: none;
   color: #681616;
+  font-weight: normal;
 }
 
+/* Hover submenu */
 .submenu-item:hover {
-  /* color: #ffd700; */
   background-color: #f6f1f1;
 }
-.menu-title:hover{
-  background-color: #f6f1f1;
-}
-.menu-title.active,
-.submenu-item.active {
-  background-color: #f6f1f1;
-}
-hr{
+
+hr {
   margin: 0;
   color: #11202f;
 }

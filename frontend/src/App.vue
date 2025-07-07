@@ -66,6 +66,10 @@ export default {
   background: linear-gradient(to bottom, #2a84de 30%, #f3efef 70%);
   color: rgb(42, 19, 77);
 }
+.bg-dark-purple {
+  background-color: #282355 !important;
+  color: white;
+}
 /* .col-md-9{
 
 } */

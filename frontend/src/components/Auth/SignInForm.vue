@@ -112,22 +112,23 @@ export default {
         });
 
         if (response.data) {
-          const { access_token, userid, username } = response.data.data;
+          const { access_token, userid, username, role } = response.data.data;
           localStorage.setItem("accessToken", access_token);
           localStorage.setItem("userid", userid);
           localStorage.setItem("userName", username);
+          localStorage.setItem("role", role);
           localStorage.setItem("rememberMe", this.rememberMe ? "true" : "false");
           this.showToast = true;
           this.toastAction = "success";
           this.toastMessage = response.data.message;
         }
         setTimeout(() => {
-  this.$router.push({ path: '/home' });
+  this.$router.push({ path: '/qsdoc/dashboard' });
 }, 1000);
       } catch (error) {
         this.showToast = true;
         this.toastAction = "error";
-        this.toastMessage = error.response?.data?.message; 
+        this.toastMessage = error.response?.data?.message|| "Lỗi kết nối"; 
       }
       
     }

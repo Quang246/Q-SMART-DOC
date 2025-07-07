@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="container-fluid">
     <div class="col-md-12 text-end">
       <argon-button
         color="danger"
@@ -224,6 +224,9 @@ export default {
 </script>
 
 <style scoped>
+.container-fluid{
+  padding: 0;
+}
 .cursor-pointer {
   cursor: pointer;
 }

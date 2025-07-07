@@ -1,10 +1,10 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="container-fluid row">
-    <div class="col-md-2">
+    <div class="col-md-3">
       <CategoryTree @category-selected="handleCategory" />
     </div>
-    <div class="col-md-10">
+    <div class="col-md-9">
       <div class="row mb-3">
         <div class="col-md-6">
           <ArgonInput v-model="form.title" placeholder="Tiêu đề" />
@@ -15,11 +15,7 @@
       </div>
       <div class="row mb-3">
         <div class="col-md-10">
-          <ArgonInput
-            type="file"
-            v-model="form.filePath"
-            placeholder="Đường dẫn file (filePath)"
-          />
+          <input type="file" class="form-control" @change="handleFileChange" />
         </div>
         <div class="col-md-2 text-end">
           <argon-button class="" id="btn-upload" @click="upload" type="submit">
@@ -94,7 +90,7 @@
             </div>
             <div class="row mb-3">
               <div class="col-md-12">
-                <ArgonInput type="file" v-model="editForm.filePath" />
+                <ArgonInput type="file" @change="handleFileEditChange" />
               </div>
             </div>
           </div>
@@ -136,6 +132,7 @@ import CategoryTree from "../Category/CategoryTree.vue";
 import ArgonInput from "../UI/ArgonInput.vue";
 import ArgonButton from "../UI/ArgonButton.vue";
 import axiosInstance from "@/config";
+import axios from "axios";
 import Toast from "../UI/Toast.vue";
 import ArgonPagination from "../UI/ArgonPagination.vue";
 import { format } from "date-fns";
@@ -161,20 +158,23 @@ export default {
         title: "",
         author: "",
         categoryId: this.selectedCategoryId,
-        filePath: "",
+        filePath: {},
       },
       editModal: false,
       editForm: {
         documentId: "",
         title: "",
         author: "",
-        filePath: "",
+        categoryId: this.selectedCategoryId,
+        filePath: null,
       },
       confirmDelete: false,
       selectedId: "",
       currentPage: 1,
       pageSize: 10,
       totalCount: 0,
+      file: "",
+      fileEdit: "",
     };
   },
   methods: {
@@ -186,19 +186,153 @@ export default {
     formatDate(date) {
       return format(new Date(date), "dd/MM/yyyy");
     },
+    handleFileChange(event) {
+      this.file = event.target.files[0];
+      if (this.file) {
+        this.form.filePath = this.file;
+      }
+    },
+    handleFileEditChange(event) {
+      this.fileEdit = event.target.files[0];
+      if (this.fileEdit) {
+        this.editForm.filePath = this.fileEdit;
+      }
+    },
+    async uploadToCloudinary(file) {
+      const cloudName = "dt5x54xv0";
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "public_raw_pdf");
+      formData.append("folder", "QSmartDoc");
+
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`;
+
+      const response = await axios.post(cloudinaryUrl, formData);
+      const uploadedUrl = response.data.secure_url;
+
+      // Không cần fl_inline vì raw không hỗ trợ
+      return uploadedUrl;
+    },
+    // async upload() {
+    //   try {
+    //     if (!this.form.title || !this.form.title.trim()) {
+    //       this.showToast = true;
+    //       this.toastAction = "error";
+    //       this.toastMessage = "Vui lòng nhập tên tài liệu.";
+    //       return;
+    //     }
+
+    //     if (!this.form.author || !this.form.author.trim()) {
+    //       this.showToast = true;
+    //       this.toastAction = "error";
+    //       this.toastMessage = "Vui lòng nhập tên tác giả.";
+    //       return;
+    //     }
+
+    //     if (!this.file) {
+    //       this.showToast = true;
+    //       this.toastAction = "error";
+    //       this.toastMessage = "Vui lòng chọn file tài liệu.";
+    //       return;
+    //     }
+    //     const allowedExtensions = [".pdf", ".doc", ".docx"];
+    //     const fileName = this.file.name.toLowerCase();
+    //     const isValidExtension = allowedExtensions.some((ext) =>
+    //       fileName.endsWith(ext)
+    //     );
+
+    //     if (!isValidExtension) {
+    //       this.showToast = true;
+    //       this.toastAction = "error";
+    //       this.toastMessage =
+    //         "Định dạng file không hợp lệ. Chỉ chấp nhận PDF, DOC, DOCX.";
+    //       return;
+    //     }
+    //     const cloudinaryUrl = await this.uploadToCloudinary(this.form.filePath);
+    //     const formData = new FormData();
+    //     formData.append("title", this.form.title);
+    //     formData.append("author", this.form.author);
+    //     formData.append("categoryId", this.selectedCategoryId);
+    //     formData.append("filePath", cloudinaryUrl);
+
+    //     for (const pair of formData.entries()) {
+    //       console.log(pair[0] + ": ", pair[1]);
+    //     }
+
+    //     const response = await axiosInstance.post(
+    //       "/documents/createdoc",
+    //       formData,
+    //       {
+    //         headers: {
+    //           Authorization: `Bearer ${this.accessToken}`,
+    //         },
+    //       }
+    //     );
+
+    //     if (response.status) {
+    //       this.showToast = true;
+    //       this.toastAction = "success";
+    //       this.toastMessage = response.data.message;
+    //       this.searchDoc();
+    //     }
+    //   } catch (error) {
+    //     this.showToast = true;
+    //     this.toastAction = "error";
+    //     this.toastMessage =
+    //     error.response?.data?.message || "Lỗi mạng hoặc kết nối khác";
+    //   }
+    // },
     async upload() {
       try {
+        if (!this.form.title || !this.form.title.trim()) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage = "Vui lòng nhập tên tài liệu.";
+          return;
+        }
+
+        if (!this.form.author || !this.form.author.trim()) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage = "Vui lòng nhập tên tác giả.";
+          return;
+        }
+
+        if (!this.file) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage = "Vui lòng chọn file tài liệu.";
+          return;
+        }
+
+        const allowedExtensions = [".pdf", ".doc", ".docx"];
+        const fileName = this.file.name.toLowerCase();
+        const isValidExtension = allowedExtensions.some((ext) =>
+          fileName.endsWith(ext)
+        );
+
+        if (!isValidExtension) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage =
+            "Định dạng file không hợp lệ. Chỉ chấp nhận PDF, DOC, DOCX.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("title", this.form.title);
+        formData.append("author", this.form.author);
+        formData.append("categoryId", this.selectedCategoryId);
+        formData.append("file", this.file); // Gửi file lên BE - BE sẽ upload Cloudinary
+
         const response = await axiosInstance.post(
           "/documents/createdoc",
-          {
-            title: this.form.title,
-            author: this.form.author,
-            categoryId: this.selectedCategoryId,
-            filePath: this.form.filePath,
-          },
+          formData,
           {
             headers: {
               Authorization: `Bearer ${this.accessToken}`,
+              "Content-Type": "multipart/form-data",
             },
           }
         );
@@ -207,20 +341,13 @@ export default {
           this.showToast = true;
           this.toastAction = "success";
           this.toastMessage = response.data.message;
+          this.searchDoc();
         }
-        this.searchDoc();
       } catch (error) {
         this.showToast = true;
         this.toastAction = "error";
-        if (this.form.title === "") {
-          this.toastMessage = error.response?.data?.message[0];
-        } else if (this.form.author === "") {
-          this.toastMessage = error.response?.data?.message[0];
-        } else if (this.form.filePath === "") {
-          this.toastMessage = error.response?.data?.message[0];
-        } else {
-          this.toastMessage = error.response?.data?.message;
-        }
+        this.toastMessage =
+          error.response?.data?.message || "Lỗi mạng hoặc kết nối khác";
       }
     },
     async searchDoc() {
@@ -251,65 +378,59 @@ export default {
     },
     async updateDoc() {
       try {
+        if (!this.editForm.title || !this.editForm.title.trim()) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage = "Vui lòng nhập tên tài liệu.";
+          return;
+        }
+
+        if (!this.editForm.author || !this.editForm.author.trim()) {
+          this.showToast = true;
+          this.toastAction = "error";
+          this.toastMessage = "Vui lòng nhập tên tác giả.";
+          return;
+        }
+        const payload = {
+          title: this.editForm.title,
+          author: this.editForm.author,
+          file: this.editForm.filePath,
+        };
+
         const response = await axiosInstance.post(
           `/documents/updateDocby/${this.editForm.documentId}`,
-          {
-            title: this.editForm.title,
-            author: this.editForm.author,
-            filePath: this.editForm.filePath,
-            categoryId: this.editForm.categoryId,
-          },
+          payload,
           {
             headers: {
               Authorization: `Bearer ${this.accessToken}`,
+              "Content-Type": "multipart/form-data",
             },
           }
         );
 
-        if (response.status === 201) {
+        if (response.status === 200 || response.status === 201) {
           this.showToast = true;
           this.toastAction = "success";
-          this.toastMessage = "Cập nhật tài liệu thành công";
+          this.toastMessage = response.data.message || "Cập nhật thành công.";
           this.editModal = false;
+          this.fileEdit = null;
           this.searchDoc();
         }
       } catch (error) {
         this.showToast = true;
         this.toastAction = "error";
-        if (error.response?.data?.message.length > 1) {
-          this.toastMessage = error.response?.data?.message;
-        } else {
-          this.toastMessage =
-            error.response?.data?.message[0] || "Lỗi khi cập nhật tài liệu";
-        }
+        this.toastMessage =
+          error.response?.data?.message || "Lỗi khi cập nhật tài liệu.";
+        console.error("UpdateDoc error:", error);
       }
     },
+
     deleteDoc(documentId) {
       this.confirmDelete = true;
-      this.selectedId=documentId;
-      // try {
-      //   const response = await axiosInstance.delete(
-      //     `documents/deleteDocby/${documentId}`,
-      //     {
-      //       headers: {
-      //         Authorization: `Bearer ${this.accessToken}`,
-      //       },
-      //     }
-      //   );
-      //   this.showToast = true;
-      //   this.toastAction = "success";
-      //   this.toastMessage = response.data.message;
-      //   this.searchDoc();
-      // } catch (error) {
-      //   this.docs = [];
-      //   this.showToast = true;
-      //   this.toastAction = "error";
-      //   this.toastMessage =
-      //     error.response?.data?.message || "Lỗi không xác định!";
-      // }
+      this.selectedId = documentId;
     },
-    async deleteDocById(documentId){
-      documentId=this.selectedId;
+    async deleteDocById(documentId) {
+      documentId = this.selectedId;
       try {
         const response = await axiosInstance.delete(
           `documents/deleteDocby/${documentId}`,
@@ -353,6 +474,9 @@ export default {
 
 <style scoped>
 .row {
+  padding: 0;
+}
+.container-fluid {
   padding: 0;
 }
 .modal-backdrop {
